@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:,">
+  <title>Portal</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: #121214;
+      color: #e1e1e6;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      user-select: none;
+    }
+
+    .card {
+      background: #1a1a1e;
+      border: 1px solid #29292e;
+      border-radius: 12px;
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      transition: transform 0.2s ease;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    p {
+      color: #a8a8b3;
+      font-size: 0.88rem;
+      margin-bottom: 24px;
+    }
+
+    .input-group {
+      margin-bottom: 18px;
+    }
+
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      background: #09090a;
+      border: 1px solid #323238;
+      border-radius: 6px;
+      color: #ffffff;
+      font-size: 0.95rem;
+      outline: none;
+      text-align: center;
+      letter-spacing: 2px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="password"]:focus {
+      border-color: #8257e6;
+      box-shadow: 0 0 0 2px rgba(130, 87, 230, 0.2);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #8257e6;
+      color: #ffffff;
+      font-size: 0.92rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.15s, opacity 0.15s;
+    }
+
+    button:hover {
+      background: #9466ff;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status-msg {
+      margin-top: 14px;
+      font-size: 0.82rem;
+      min-height: 20px;
+      font-weight: 500;
+    }
+
+    .error-msg {
+      color: #f75a68;
+    }
+
+    .success-msg {
+      color: #04d361;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    .shake {
+      animation: shake 0.3s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card" id="card">
+    <h1>Restricted Access</h1>
+    <p>Enter the security key to continue</p>
+
+    <form id="loginForm" onsubmit="handleAuth(event)">
+      <div class="input-group">
+        <input 
+          type="password" 
+          id="passwordInput" 
+          placeholder="Password..." 
+          autocomplete="off" 
+          autofocus
+        >
+      </div>
+      <button type="submit" id="submitBtn">Launch</button>
+      <div class="status-msg" id="statusMsg"></div>
+    </form>
+  </div>
+
+  <script>
+    // Converted Dropbox raw direct usercontent link:
+    const TARGET_URL = 'https://dl.dropboxusercontent.com/scl/fi/1mz4ipu8rltqii9z9vrav/okay.html?rlkey=85bb2trsv7v085yyp0xoaxtf3&st=9jru6sxo';
+    const SECRET_KEY = 'cubed';
+
+    let isLaunching = false;
+
+    async function handleAuth(event) {
+      event.preventDefault();
+      if (isLaunching) return;
+
+      const card = document.getElementById('card');
+      const input = document.getElementById('passwordInput');
+      const btn = document.getElementById('submitBtn');
+      const statusMsg = document.getElementById('statusMsg');
+
+      const val = input.value.trim().toLowerCase();
+
+      // Check Password
+      if (val !== SECRET_KEY) {
+        statusMsg.className = 'status-msg error-msg';
+        statusMsg.textContent = 'Incorrect password.';
+        card.classList.add('shake');
+        setTimeout(() => card.classList.remove('shake'), 350);
+        input.value = '';
+        input.focus();
+        return;
+      }
+
+      // Password is correct
+      isLaunching = true;
+      btn.disabled = true;
+      statusMsg.className = 'status-msg success-msg';
+      statusMsg.textContent = 'Access granted. Opening session...';
+
+      // 1. MUST open about:blank immediately in the click/submit handler to avoid popup blockers
+      const blankWindow = window.open('about:blank', '_blank');
+
+      if (!blankWindow) {
+        alert('Popup blocked! Please allow popups for this page to launch.');
+        isLaunching = false;
+        btn.disabled = false;
+        statusMsg.className = 'status-msg error-msg';
+        statusMsg.textContent = 'Popup blocked by browser.';
+        return;
+      }
+
+      // 2. Put an interim loading screen inside the about:blank window
+      blankWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Loading...</title>
+          <style>
+            body {
+              background: #000;
+              color: #9aa0a6;
+              font-family: monospace;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              align-items: center;
+              height: 100vh;
+              margin: 0;
+            }
+            .spinner {
+              width: 32px;
+              height: 32px;
+              border: 3px solid #282830;
+              border-top-color: #8257e6;
+              border-radius: 50%;
+              animation: spin 0.8s linear infinite;
+              margin-bottom: 16px;
+            }
+            @keyframes spin { to { transform: rotate(360deg); } }
+          </style>
+        </head>
+        <body>
+          <div class="spinner"></div>
+          <div>Loading client runtime...</div>
+        </body>
+        </html>
+      `);
+      blankWindow.document.close();
+
+      // 3. Fetch the Dropbox file and write it to the about:blank tab
+      try {
+        statusMsg.textContent = 'Downloading client payload...';
+        const res = await fetch(TARGET_URL);
+
+        if (!res.ok) {
+          throw new Error('HTTP ' + res.status);
+        }
+
+        const html = await res.text();
+
+        // Overwrite about:blank with the full game HTML
+        blankWindow.document.open();
+        blankWindow.document.write(html);
+        blankWindow.document.close();
+
+        statusMsg.textContent = 'Launched successfully!';
+      } catch (err) {
+        console.error('Fetch error:', err);
+        statusMsg.className = 'status-msg error-msg';
+        statusMsg.textContent = 'Failed to load client payload.';
+        
+        blankWindow.document.open();
+        blankWindow.document.write(`
+          <body style="background:#121214;color:#ff5555;font-family:monospace;padding:24px;">
+            <h3>ERR_LOAD_FAILED</h3>
+            <p>Could not fetch client package: ${err.message}</p>
+          </body>
+        `);
+        blankWindow.document.close();
+      } finally {
+        isLaunching = false;
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
